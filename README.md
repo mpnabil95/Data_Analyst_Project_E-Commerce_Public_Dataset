@@ -2,7 +2,7 @@
 
 Ini adalah proyek akhir (submission) untuk kelas Belajar Analisis Data dengan Python dari Dicoding. Dashboard ini dibuat menggunakan Streamlit untuk memvisualisasikan data interaktif dari E-Commerce Public Dataset, mencakup analisis performa penjualan, ulasan pelanggan, pemetaan geospasial, dan RFM Analysis.
 
-## Setup Environment - Anaconda
+## Setup Environment
 ```
 conda create --name main-ds python=3.11
 conda activate main-ds
