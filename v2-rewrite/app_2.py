@@ -148,6 +148,24 @@ st.markdown(
             border-radius: 10px; border: 1px solid #2563EB; color: #2563EB;
             font-weight: 700; background: white;
         }
+        .spark {
+            width:100%;
+            height:36px;
+            margin-top:10px;
+            overflow:visible;
+        }
+        .spark polyline {
+            fill:none;
+            stroke:#38BDF8;
+            stroke-width:3;
+            stroke-linecap:round;
+            stroke-linejoin:round;
+        }
+        @media (max-width: 768px) {
+            .block-container { padding-left: .6rem; padding-right: .6rem; }
+            .metric-value { font-size:1.35rem; }
+            .hero-title { font-size:1.5rem; }
+        }
         footer { visibility: hidden; }
     </style>
     """,
@@ -457,14 +475,14 @@ def metric_card(title: str, value: str, note: str, accent: str, spark: list[floa
             x=i/(len(spark)-1)*100 if len(spark)>1 else 50
             y=35-((v-mn)/(mx-mn+1e-9)*30)
             points.append(f"{x:.1f},{y:.1f}")
-        spark_svg=f'<svg class="spark" viewBox="0 0 100 40"><polyline points="{' '.join(points)}" /></svg>'
+        spark_svg = f'<svg class="spark" viewBox="0 0 100 40"><polyline points="{" ".join(points)}" /></svg>'
     st.markdown(
         f"""
         <div class="metric-card" style="--accent:{accent}">
             <div class="metric-title">{html.escape(title)}</div>
             <div class="metric-value">{html.escape(value)}</div>
             {spark_svg}
-            <div class="metric-note">{html.escape(note)}</div>
+            <div class="metric-note">{note}</div>
         </div>
         """,
         unsafe_allow_html=True,
