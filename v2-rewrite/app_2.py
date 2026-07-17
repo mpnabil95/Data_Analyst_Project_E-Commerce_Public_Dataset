@@ -173,10 +173,20 @@ def normalize_filename(name: str) -> str:
 
 def discover_local_sources() -> dict[str, Path]:
     """Mencari setiap CSV pada beberapa lokasi yang lazim digunakan."""
+    # Mencari sumber data secara fleksibel.
+    # Mendukung kondisi ketika app berada di subfolder baru (misalnya v2-rewrite)
+    # sedangkan folder data/ berada satu tingkat di atasnya.
+    parent_dirs = [
+        APP_DIR.parent,
+        APP_DIR.parent.parent,
+    ]
+
     candidate_dirs = [
         APP_DIR,
         APP_DIR / "data",
         APP_DIR / "project_sources",
+        *[parent / "data" for parent in parent_dirs],
+        *[parent / "project_sources" for parent in parent_dirs],
         Path.cwd(),
         Path.cwd() / "data",
         Path.cwd() / "project_sources",
