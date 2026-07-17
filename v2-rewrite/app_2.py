@@ -132,7 +132,7 @@ st.markdown(
             margin: .45rem 0 .9rem;
         }
         .chart-shell {
-            background: white; border: 1px solid #E7ECF4; border-radius: 18px;
+            background: #FFFFFF; border: 1px solid #D7E0EE; border-radius: 18px;
             padding: .35rem .6rem; box-shadow: 0 7px 25px rgba(15,23,42,.045);
         }
         div[data-testid="stTabs"] button { font-weight: 700; }
@@ -429,20 +429,48 @@ def section_heading(title: str, note: str = "") -> None:
 
 
 def style_figure(fig: go.Figure, height: int = 380) -> go.Figure:
-    """Menerapkan gaya visual yang konsisten pada seluruh grafik."""
+    """Menerapkan gaya visual kontras tinggi agar grafik terbaca pada background dashboard."""
     fig.update_layout(
         height=height,
-        margin=dict(l=15, r=15, t=50, b=15),
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(family="Inter, sans-serif", color="#334155", size=12),
-        title_font=dict(size=15, color=COLORS["navy"]),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-        hoverlabel=dict(bgcolor="white", font_color="#0F172A"),
+        margin=dict(l=25, r=25, t=55, b=30),
+        paper_bgcolor="#FFFFFF",
+        plot_bgcolor="#FFFFFF",
+        font=dict(
+            family="Inter, sans-serif",
+            color="#1E293B",
+            size=12
+        ),
+        title_font=dict(size=16, color="#0B1739"),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1,
+            font=dict(color="#334155")
+        ),
+        hoverlabel=dict(
+            bgcolor="white",
+            font_color="#0F172A"
+        ),
     )
-    fig.update_xaxes(showgrid=False, linecolor=COLORS["grid"])
-    fig.update_yaxes(gridcolor=COLORS["grid"], zeroline=False)
+
+    fig.update_xaxes(
+        showgrid=False,
+        linecolor="#CBD5E1",
+        tickfont=dict(color="#475569"),
+        title_font=dict(color="#334155")
+    )
+
+    fig.update_yaxes(
+        gridcolor="#E2E8F0",
+        zeroline=False,
+        tickfont=dict(color="#475569"),
+        title_font=dict(color="#334155")
+    )
+
     return fig
+
 
 
 def apply_filters(
@@ -763,7 +791,7 @@ def main() -> None:
                 .agg(GMV=("gmv", "sum"), Pesanan=("order_id", "nunique"))
             )
             fig = go.Figure()
-            fig.add_trace(go.Scatter(x=trend["period"], y=trend["GMV"], name="GMV", mode="lines", line=dict(color=COLORS["blue"], width=3), fill="tozeroy", fillcolor="rgba(37,99,235,.08)", hovertemplate="%{x|%d %b %Y}<br>GMV R$ %{y:,.2f}<extra></extra>"))
+            fig.add_trace(go.Scatter(x=trend["period"], y=trend["GMV"], name="GMV", mode="lines", line=dict(color=COLORS["blue"], width=3), fill="tozeroy", fillcolor="rgba(37,99,235,0.16)", hovertemplate="%{x|%d %b %Y}<br>GMV R$ %{y:,.2f}<extra></extra>"))
             fig.add_trace(go.Scatter(x=trend["period"], y=trend["Pesanan"], name="Pesanan", mode="lines+markers", yaxis="y2", line=dict(color=COLORS["cyan"], width=2), marker=dict(size=5), hovertemplate="%{x|%d %b %Y}<br>%{y:,.0f} pesanan<extra></extra>"))
             fig.update_layout(yaxis=dict(title="GMV (R$)"), yaxis2=dict(title="Pesanan", overlaying="y", side="right", showgrid=False), xaxis_title=period_label)
             st.plotly_chart(style_figure(fig, 390), use_container_width=True, config={"displayModeBar": False})
@@ -780,14 +808,14 @@ def main() -> None:
         with left:
             section_heading("Kategori penyumbang GMV", "Sepuluh kategori dengan nilai produk dan freight tertinggi.")
             category_revenue = filtered.groupby("category", as_index=False)["gmv"].sum().nlargest(10, "gmv").sort_values("gmv")
-            fig = px.bar(category_revenue, x="gmv", y="category", orientation="h", color="gmv", color_continuous_scale=["#BFDBFE", COLORS["blue"]], labels={"gmv": "GMV (R$)", "category": ""})
+            fig = px.bar(category_revenue, x="gmv", y="category", orientation="h", color="gmv", color_continuous_scale=["#93C5FD", "#1D4ED8"], labels={"gmv": "GMV (R$)", "category": ""})
             fig.update_layout(coloraxis_showscale=False)
             fig.update_traces(hovertemplate="%{y}<br>GMV R$ %{x:,.2f}<extra></extra>")
             st.plotly_chart(style_figure(fig, 400), use_container_width=True, config={"displayModeBar": False})
         with right:
             section_heading("Kontribusi state customer", "Sepuluh state dengan GMV tertinggi.")
             state_revenue = filtered.groupby("customer_state", as_index=False).agg(GMV=("gmv", "sum"), Pesanan=("order_id", "nunique")).nlargest(10, "GMV")
-            fig = px.bar(state_revenue, x="customer_state", y="GMV", color="Pesanan", color_continuous_scale=["#CFFAFE", COLORS["cyan"]], labels={"customer_state": "State", "GMV": "GMV (R$)"})
+            fig = px.bar(state_revenue, x="customer_state", y="GMV", color="Pesanan", color_continuous_scale=["#67E8F9", "#0891B2"], labels={"customer_state": "State", "GMV": "GMV (R$)"})
             fig.update_layout(coloraxis_colorbar=dict(title="Pesanan"))
             fig.update_traces(hovertemplate="State %{x}<br>GMV R$ %{y:,.2f}<br>Pesanan %{marker.color:,.0f}<extra></extra>")
             st.plotly_chart(style_figure(fig, 400), use_container_width=True, config={"displayModeBar": False})
@@ -894,7 +922,7 @@ def main() -> None:
                 .agg(GMV=("gmv", "sum"), Seller=("seller_id", "nunique"), Pesanan=("order_id", "nunique"))
                 .nlargest(12, "GMV")
             )
-            fig = px.bar(seller_profile, x="seller_state", y="GMV", color="Seller", color_continuous_scale=["#DDD6FE", COLORS["violet"]], labels={"seller_state": "State seller", "GMV": "GMV (R$)"})
+            fig = px.bar(seller_profile, x="seller_state", y="GMV", color="Seller", color_continuous_scale=["#C4B5FD", "#6D28D9"], labels={"seller_state": "State seller", "GMV": "GMV (R$)"})
             fig.update_traces(customdata=seller_profile[["Seller", "Pesanan"]], hovertemplate="State %{x}<br>GMV R$ %{y:,.2f}<br>Seller %{customdata[0]:,.0f}<br>Pesanan %{customdata[1]:,.0f}<extra></extra>")
             st.plotly_chart(style_figure(fig, 440), use_container_width=True, config={"displayModeBar": False})
 
@@ -942,7 +970,7 @@ def main() -> None:
         left, right = st.columns([1.25, 1], gap="large")
         with left:
             section_heading("Nilai pembayaran menurut metode", "Nilai pembayaran dihitung pada level pesanan yang masuk hasil filter.")
-            fig = px.bar(payment_profile.sort_values("Nilai"), x="Nilai", y="payment_label", orientation="h", color="Nilai", color_continuous_scale=["#CFFAFE", COLORS["blue"]], labels={"payment_label": "", "Nilai": "Nilai pembayaran (R$)"})
+            fig = px.bar(payment_profile.sort_values("Nilai"), x="Nilai", y="payment_label", orientation="h", color="Nilai", color_continuous_scale=["#60A5FA", "#1E40AF"], labels={"payment_label": "", "Nilai": "Nilai pembayaran (R$)"})
             fig.update_layout(coloraxis_showscale=False)
             fig.update_traces(customdata=payment_profile.sort_values("Nilai")[["Pesanan", "Transaksi"]], hovertemplate="%{y}<br>Nilai R$ %{x:,.2f}<br>Pesanan %{customdata[0]:,.0f}<br>Transaksi %{customdata[1]:,.0f}<extra></extra>")
             st.plotly_chart(style_figure(fig, 400), use_container_width=True, config={"displayModeBar": False})
