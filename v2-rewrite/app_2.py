@@ -49,6 +49,11 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# UI theme preference
+if "dark_mode" not in st.session_state:
+    st.session_state.dark_mode = False
+
+
 COLORS = {
     "navy": "#0B1739",
     "blue": "#2563EB",
@@ -119,6 +124,8 @@ st.markdown(
         .metric-title { color: #64748B; font-size: .74rem; font-weight: 700; letter-spacing: .055em; text-transform: uppercase; }
         .metric-value { color: #0F172A; font-size: 1.72rem; font-weight: 800; margin: .38rem 0 .2rem; white-space: nowrap; }
         .metric-note { color: #64748B; font-size: .75rem; }
+        .spark { width:100%; height:32px; margin:.15rem 0; }
+        .spark polyline { fill:none; stroke:#2563EB; stroke-width:3; stroke-linecap:round; stroke-linejoin:round; }
         .section-title { color: #0B1739; font-size: 1.12rem; font-weight: 800; margin: .3rem 0 .1rem; }
         .section-note { color: #64748B; font-size: .82rem; margin-bottom: .7rem; }
         .insight-box {
@@ -146,6 +153,28 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+
+# Responsive + dark mode enhancement
+if st.session_state.dark_mode:
+    st.markdown("""
+    <style>
+    .stApp { background:#0B1220 !important; }
+    .metric-card,.chart-shell { background:#111827 !important; border-color:#263449 !important; }
+    .metric-title,.metric-note,.section-note { color:#CBD5E1 !important; }
+    .metric-value,.section-title { color:#F8FAFC !important; }
+    </style>
+    """, unsafe_allow_html=True)
+
+st.markdown("""
+<style>
+@media (max-width: 900px) {
+    .block-container { padding-left: .7rem; padding-right: .7rem; }
+    .hero-title { font-size: 1.5rem !important; }
+    .metric-card { min-height:100px; padding:.8rem; }
+    .metric-value { font-size:1.25rem; }
+}
+</style>
+""", unsafe_allow_html=True)
 
 
 # -----------------------------------------------------------------------------
@@ -419,12 +448,22 @@ def percent_delta(current: float, previous: float) -> str:
     return f"{arrow} {abs(delta):.1f}% vs periode sebelumnya"
 
 
-def metric_card(title: str, value: str, note: str, accent: str) -> None:
+def metric_card(title: str, value: str, note: str, accent: str, spark: list[float] | None = None) -> None:
+    spark_svg = ""
+    if spark:
+        mn, mx = min(spark), max(spark)
+        points=[]
+        for i,v in enumerate(spark):
+            x=i/(len(spark)-1)*100 if len(spark)>1 else 50
+            y=35-((v-mn)/(mx-mn+1e-9)*30)
+            points.append(f"{x:.1f},{y:.1f}")
+        spark_svg=f'<svg class="spark" viewBox="0 0 100 40"><polyline points="{' '.join(points)}" /></svg>'
     st.markdown(
         f"""
         <div class="metric-card" style="--accent:{accent}">
             <div class="metric-title">{html.escape(title)}</div>
             <div class="metric-value">{html.escape(value)}</div>
+            {spark_svg}
             <div class="metric-note">{html.escape(note)}</div>
         </div>
         """,
@@ -600,6 +639,7 @@ def main() -> None:
     with st.sidebar:
         st.markdown("## OLIST / BI")
         st.caption("E-commerce performance cockpit")
+        st.session_state.dark_mode = st.toggle("🌙 Dark mode", value=st.session_state.dark_mode)
         with st.expander("Sumber data", expanded=len(local_sources) < len(REQUIRED_FILES)):
             st.caption(
                 f"{len(local_sources)}/{len(REQUIRED_FILES)} dataset ditemukan otomatis. "
