@@ -474,51 +474,49 @@ def clean_metric_text(text: str) -> str:
 
 def metric_card(title: str, value: str, note: str, accent: str, spark: list[float] | None = None) -> None:
     """
-    Komponen KPI card.
-
-    Catatan:
-    - Semua input diperlakukan sebagai plain text.
-    - Tidak menerima HTML dari parameter note.
-    - Sparkline dibuat terpisah agar tidak mencampur struktur HTML.
+    KPI card versi stabil.
+    Tidak menggunakan nested HTML untuk note sehingga mencegah HTML tampil sebagai teks.
     """
 
-    spark_svg = ""
-
-    if spark and len(spark) > 1:
-        mn, mx = min(spark), max(spark)
-        points = []
-
-        for i, value_point in enumerate(spark):
-            x = i / (len(spark)-1) * 100
-            y = 35 - ((value_point - mn) / (mx - mn + 1e-9) * 30)
-            points.append(f"{x:.1f},{y:.1f}")
-
-        spark_svg = (
-            '<svg class="spark" viewBox="0 0 100 40" '
-            'preserveAspectRatio="none">'
-            f'<polyline points="{" ".join(points)}"></polyline>'
-            '</svg>'
+    with st.container():
+        st.markdown(
+            f"""
+            <div class="metric-card" style="--accent:{accent}">
+                <div class="metric-title">{clean_metric_text(title)}</div>
+                <div class="metric-value">{clean_metric_text(value)}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
 
-    safe_title = html.escape(str(title))
-    safe_value = html.escape(str(value))
-    safe_note = html.escape(
-        re.sub(r"<[^>]*>", "", str(note))
-    )
+        if spark:
+            spark_df = pd.DataFrame({"trend": spark})
+            fig = go.Figure()
+            fig.add_trace(
+                go.Scatter(
+                    y=spark_df["trend"],
+                    mode="lines",
+                    line=dict(color=accent, width=2),
+                    hoverinfo="skip",
+                )
+            )
+            fig.update_layout(
+                height=45,
+                margin=dict(l=0, r=0, t=0, b=0),
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                showlegend=False,
+                xaxis=dict(visible=False),
+                yaxis=dict(visible=False),
+            )
+            st.plotly_chart(
+                fig,
+                use_container_width=True,
+                config={"displayModeBar": False},
+            )
 
-    card_html = f"""
-    <div class="metric-card" style="--accent:{accent}">
-        <div class="metric-title">{safe_title}</div>
-        <div class="metric-value">{safe_value}</div>
-        {spark_svg}
-        <div class="metric-note">{safe_note}</div>
-    </div>
-    """
+        st.caption(clean_metric_text(note))
 
-    st.markdown(
-        card_html,
-        unsafe_allow_html=True
-    )
 
 
 def section_heading(title: str, note: str = "") -> None:
