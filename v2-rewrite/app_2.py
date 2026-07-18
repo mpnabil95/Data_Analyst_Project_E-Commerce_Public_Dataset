@@ -466,6 +466,12 @@ def percent_delta(current: float, previous: float) -> str:
     return f"{arrow} {abs(delta):.1f}% vs periode sebelumnya"
 
 
+def clean_metric_text(text: str) -> str:
+    """Membersihkan input agar HTML tidak pernah tampil sebagai teks pada KPI."""
+    text = re.sub(r"<[^>]+>", "", str(text))
+    return html.escape(text)
+
+
 def metric_card(title: str, value: str, note: str, accent: str, spark: list[float] | None = None) -> None:
     spark_svg = ""
     if spark:
@@ -479,10 +485,10 @@ def metric_card(title: str, value: str, note: str, accent: str, spark: list[floa
     st.markdown(
         f"""
         <div class="metric-card" style="--accent:{accent}">
-            <div class="metric-title">{html.escape(title)}</div>
-            <div class="metric-value">{html.escape(value)}</div>
+            <div class="metric-title">{clean_metric_text(title)}</div>
+            <div class="metric-value">{clean_metric_text(value)}</div>
             {spark_svg}
-            <div class="metric-note">{note}</div>
+            <div class="metric-note">{clean_metric_text(note)}</div>
         </div>
         """,
         unsafe_allow_html=True,
