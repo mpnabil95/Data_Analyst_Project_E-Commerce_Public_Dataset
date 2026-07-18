@@ -126,6 +126,20 @@ st.markdown(
         .metric-note { color: #64748B; font-size: .75rem; }
         .spark { width:100%; height:32px; margin:.15rem 0; }
         .spark polyline { fill:none; stroke:#2563EB; stroke-width:3; stroke-linecap:round; stroke-linejoin:round; }
+        
+        .spark-mini {
+            width:100%;
+            height:32px;
+            margin:8px 0 4px;
+        }
+        .spark-mini polyline {
+            fill:none;
+            stroke:var(--accent);
+            stroke-width:3;
+            stroke-linecap:round;
+            stroke-linejoin:round;
+        }
+
         .section-title { color: #0B1739; font-size: 1.12rem; font-weight: 800; margin: .3rem 0 .1rem; }
         .section-note { color: #64748B; font-size: .82rem; margin-bottom: .7rem; }
         .insight-box {
@@ -472,29 +486,52 @@ def clean_metric_text(text: str) -> str:
     return html.escape(text)
 
 
-def metric_card(title: str, value: str, note: str, accent: str, spark: list[float] | None = None) -> None:
+def render_kpi_card(
+    title: str,
+    value: str,
+    delta: str,
+    accent: str,
+    spark: list[float] | None = None,
+) -> None:
     """
-    KPI card versi stabil.
-    Tidak menggunakan nested HTML untuk note sehingga mencegah HTML tampil sebagai teks.
+    KPI card stabil berbasis komponen native Streamlit.
+    Tidak menggunakan HTML custom untuk value/note sehingga
+    mencegah HTML tampil sebagai teks.
     """
 
-    with st.container():
+    with st.container(border=True):
         st.markdown(
             f"""
-            <div class="metric-card" style="--accent:{accent}">
-                <div class="metric-title">{clean_metric_text(title)}</div>
-                <div class="metric-value">{clean_metric_text(value)}</div>
+            <div style="
+                border-left:4px solid {accent};
+                padding-left:12px;
+                margin-bottom:6px;
+            ">
+                <span style="
+                    color:#94A3B8;
+                    font-size:0.75rem;
+                    font-weight:700;
+                    letter-spacing:.05em;
+                    text-transform:uppercase;
+                ">
+                    {html.escape(str(title))}
+                </span>
             </div>
             """,
             unsafe_allow_html=True,
         )
 
+        st.metric(
+            label="",
+            value=str(value),
+            delta=str(delta) if delta else None,
+        )
+
         if spark:
-            spark_df = pd.DataFrame({"trend": spark})
             fig = go.Figure()
             fig.add_trace(
                 go.Scatter(
-                    y=spark_df["trend"],
+                    y=spark,
                     mode="lines",
                     line=dict(color=accent, width=2),
                     hoverinfo="skip",
@@ -514,10 +551,6 @@ def metric_card(title: str, value: str, note: str, accent: str, spark: list[floa
                 use_container_width=True,
                 config={"displayModeBar": False},
             )
-
-        st.caption(clean_metric_text(note))
-
-
 
 def section_heading(title: str, note: str = "") -> None:
     st.markdown(f'<div class="section-title">{html.escape(title)}</div>', unsafe_allow_html=True)
@@ -819,28 +852,28 @@ def main() -> None:
 
     metric_columns = st.columns(5, gap="small")
     with metric_columns[0]:
-        metric_card(
+        render_kpi_card(
             "GMV",
             format_currency(current_revenue),
             percent_delta(current_revenue, previous_revenue),
             COLORS["blue"],
         )
     with metric_columns[1]:
-        metric_card(
+        render_kpi_card(
             "Pesanan",
             format_integer(current_orders),
             percent_delta(current_orders, previous_orders),
             COLORS["cyan"],
         )
     with metric_columns[2]:
-        metric_card(
+        render_kpi_card(
             "Customer unik",
             format_integer(current_customers),
             percent_delta(current_customers, previous_customers),
             COLORS["violet"],
         )
     with metric_columns[3]:
-        metric_card(
+        render_kpi_card(
             "Average order value",
             format_currency(current_aov),
             percent_delta(current_aov, previous_aov),
@@ -849,7 +882,7 @@ def main() -> None:
     with metric_columns[4]:
         rating_text = f"{current_rating:.2f} / 5" if np.isfinite(current_rating) else "N/A"
         reviewed_share = order_view["review_score"].notna().mean() * 100
-        metric_card(
+        render_kpi_card(
             "Rating rata-rata",
             rating_text,
             f"Cakupan ulasan {reviewed_share:.1f}% pesanan",
@@ -1035,11 +1068,11 @@ def main() -> None:
         late_rate = (delivered_orders["delivery_delay_days"] > 0).mean() * 100 if not delivered_orders.empty else np.nan
         negative_review = (reviewed["review_score"] <= 2).mean() * 100 if not reviewed.empty else np.nan
         with left:
-            metric_card("Waktu kirim rata-rata", f"{average_delivery:.1f} hari" if np.isfinite(average_delivery) else "N/A", "Dari pembelian hingga diterima", COLORS["cyan"])
+            render_kpi_card("Waktu kirim rata-rata", f"{average_delivery:.1f} hari" if np.isfinite(average_delivery) else "N/A", "Dari pembelian hingga diterima", COLORS["cyan"])
         with middle:
-            metric_card("Keterlambatan", f"{late_rate:.1f}%" if np.isfinite(late_rate) else "N/A", "Diterima setelah estimasi", COLORS["rose"])
+            render_kpi_card("Keterlambatan", f"{late_rate:.1f}%" if np.isfinite(late_rate) else "N/A", "Diterima setelah estimasi", COLORS["rose"])
         with right:
-            metric_card("Ulasan negatif", f"{negative_review:.1f}%" if np.isfinite(negative_review) else "N/A", "Rating 1 atau 2", COLORS["amber"])
+            render_kpi_card("Ulasan negatif", f"{negative_review:.1f}%" if np.isfinite(negative_review) else "N/A", "Rating 1 atau 2", COLORS["amber"])
 
         left, right = st.columns(2, gap="large")
         with left:
