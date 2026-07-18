@@ -473,25 +473,51 @@ def clean_metric_text(text: str) -> str:
 
 
 def metric_card(title: str, value: str, note: str, accent: str, spark: list[float] | None = None) -> None:
+    """
+    Komponen KPI card.
+
+    Catatan:
+    - Semua input diperlakukan sebagai plain text.
+    - Tidak menerima HTML dari parameter note.
+    - Sparkline dibuat terpisah agar tidak mencampur struktur HTML.
+    """
+
     spark_svg = ""
-    if spark:
+
+    if spark and len(spark) > 1:
         mn, mx = min(spark), max(spark)
-        points=[]
-        for i,v in enumerate(spark):
-            x=i/(len(spark)-1)*100 if len(spark)>1 else 50
-            y=35-((v-mn)/(mx-mn+1e-9)*30)
+        points = []
+
+        for i, value_point in enumerate(spark):
+            x = i / (len(spark)-1) * 100
+            y = 35 - ((value_point - mn) / (mx - mn + 1e-9) * 30)
             points.append(f"{x:.1f},{y:.1f}")
-        spark_svg = f'<svg class="spark" viewBox="0 0 100 40"><polyline points="{" ".join(points)}" /></svg>'
+
+        spark_svg = (
+            '<svg class="spark" viewBox="0 0 100 40" '
+            'preserveAspectRatio="none">'
+            f'<polyline points="{" ".join(points)}"></polyline>'
+            '</svg>'
+        )
+
+    safe_title = html.escape(str(title))
+    safe_value = html.escape(str(value))
+    safe_note = html.escape(
+        re.sub(r"<[^>]*>", "", str(note))
+    )
+
+    card_html = f"""
+    <div class="metric-card" style="--accent:{accent}">
+        <div class="metric-title">{safe_title}</div>
+        <div class="metric-value">{safe_value}</div>
+        {spark_svg}
+        <div class="metric-note">{safe_note}</div>
+    </div>
+    """
+
     st.markdown(
-        f"""
-        <div class="metric-card" style="--accent:{accent}">
-            <div class="metric-title">{clean_metric_text(title)}</div>
-            <div class="metric-value">{clean_metric_text(value)}</div>
-            {spark_svg}
-            <div class="metric-note">{clean_metric_text(note)}</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
+        card_html,
+        unsafe_allow_html=True
     )
 
 
